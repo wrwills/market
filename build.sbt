@@ -1,3 +1,5 @@
+import com.typesafe.sbt.SbtStartScript
+
 name := "market"
 
 version := "0.1"
@@ -15,3 +17,5 @@ libraryDependencies += "com.github.tototoshi" %% "scala-csv" % "1.0.0-SNAPSHOT"
 libraryDependencies += "joda-time" % "joda-time" % "2.3"
 
 libraryDependencies += "org.joda" % "joda-convert" % "1.5"
+
+seq(SbtStartScript.startScriptForClassesSettings: _*)
