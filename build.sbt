@@ -13,3 +13,5 @@ libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.2.3"
 libraryDependencies += "com.github.tototoshi" %% "scala-csv" % "1.0.0-SNAPSHOT"
 
 libraryDependencies += "joda-time" % "joda-time" % "2.3"
+
+libraryDependencies += "org.joda" % "joda-convert" % "1.5"
