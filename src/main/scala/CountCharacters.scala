@@ -84,5 +84,21 @@ object CountCharacters {
     This does not need to re-use the above and may be an entirely different algorithm.
   */
   def countCharsInWordsOptimised(i: Int): Int = error("not yet implemented")
- 
+
+
+  /* tests
+   CountCharacters.toWords(10)
+CountCharacters.toWords(999)
+CountCharacters.toWords(99)
+CountCharacters.toWords(1099)
+CountCharacters.toWords(1099)
+CountCharacters.toWords(99)
+CountCharacters.toWords(999)
+CountCharacters.toWords(1099)
+CountCharacters.toWords(1799)
+CountCharacters.toWords(101799)
+CountCharacters.toWords(111799)
+CountCharacters.toWords(2111799)
+*/
+  
 }
