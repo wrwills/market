@@ -20,14 +20,19 @@ trait MarketSimulationActorsContainer {
       case x: SpotRates => { 
         ladder = updateLadder(x,ladder)
       }
-      case 'log => println(output( DateTime.now, ladder))
+      case 'log => aggregateLogger ! output( DateTime.now, ladder)
     }
   }
 
-  /*
-  class AggregateLogger extends Actor { 
-    
-  }*/
+  import scalax.io._
+  val logOut: Output = Resource.fromFile("simulation_results.txt")
+
+  class AggregateLogger extends Actor {
+
+    def receive = { 
+      case x: Set[Any] => logOut.write(x.mkString("\n"))
+    }
+  }
 
   /**
    * read csv file; parse lines and send out to the spot rates actor
@@ -42,16 +47,19 @@ trait MarketSimulationActorsContainer {
     var pending: List[SpotRates] = List()
     var next: Option[(Double,SpotRates)] = None
     
-    def fill(pTs: Double, accum: List[SpotRates]): (Double, List[SpotRates], Double, SpotRates)  = { 
-      // might be better to use a stream here
-      val (ts,sr) = parseCsvSpotRate(csvIterator.next.toList).get
-      if (accum.isEmpty) 
-        fill(ts, List(sr))
-      else if (ts == pTs)
-        fill(pTs, sr :: accum)
-      else
-        (pTs, accum, ts, sr) 
-    }
+    // might be better to use a stream here
+    def fill(pTs: Double, accum: List[SpotRates]): (Double, List[SpotRates], Option[(Double, SpotRates)])  = 
+      if (csvIterator.isEmpty)
+        (pTs, accum, None)
+      else {       
+        val (ts,sr) = parseCsvSpotRate(csvIterator.next.toList).get
+        if (accum.isEmpty) 
+          fill(ts, List(sr))
+        else if (ts == pTs)
+          fill(pTs, sr :: accum)
+        else
+          (pTs, accum, Some(ts, sr)) 
+      }
 
     def receive = { 
       case 'start => { 
@@ -60,19 +68,23 @@ trait MarketSimulationActorsContainer {
       }
       case 'next => { 
         pending.reverse.foreach( spotRatesActor ! _ )
-        val (pts, nextPending, afterNextTs, afterNextSpotrates) = 
-          if (next.isDefined)
-            fill(next.get._1, List(next.get._2))
-          else
-            fill(0.0, List())
-        pending = nextPending
-        pendingTs = pts
-        next = Some(afterNextTs, afterNextSpotrates)
-        scheduleOnce( 
-          (pendingTs.toLong - (DateTime.now.getMillis - startTime)).milliseconds,
-          self,
-          'next
+        if (pendingTs != 0.0 && next.isEmpty) { 
+          actorSystem.shutdown
+        } else { 
+          val (pts, nextPending, afterNext) = // afterNextTs, afterNextSpotrates) = 
+            if (next.isDefined)
+              fill(next.get._1, List(next.get._2))
+            else
+              fill(0.0, List())
+          pending = nextPending
+          pendingTs = pts
+          next = afterNext // Some(afterNextTs, afterNextSpotrates)
+          scheduleOnce( 
+            (pendingTs.toLong - (DateTime.now.getMillis - startTime)).milliseconds,
+            self,
+            'next
           )
+        }
       }
     }
   }
@@ -80,8 +92,11 @@ trait MarketSimulationActorsContainer {
   val csvIterator: scala.collection.Iterator[Seq[String]]
   // val csvStream: Stream[List[String]]
 
-  val marketSimulatorFeed = actorSystem.actorOf(Props[MarketSimulatorFeed]) //;,"simulated-feed")
-  val spotRatesActor = actorSystem.actorOf(Props[SpotRatesActor]) // ,"spot-rates")
+  val marketSimulatorFeed = actorSystem.actorOf(Props( new MarketSimulatorFeed ) )
+  val spotRatesActor = actorSystem.actorOf( Props( new SpotRatesActor ) )
+  val aggregateLogger = actorSystem.actorOf( Props( new AggregateLogger ) )
+    //actorSystem.actorOf(Props[MarketSimulatorFeed]) //;,"simulated-feed")
+  // Props[SpotRatesActor]) // ,"spot-rates")
 
   val logInterval = 100 millis
 
@@ -113,7 +128,7 @@ object FXAggregator {
   def updateLadder(newRate: SpotRates, oldLadder: CurrencyLadder): CurrencyLadder =
     oldLadder + ((newRate.market, newRate.currencyPair) -> (newRate.bid, newRate.ask))
   
-  val dateFormat = org.joda.time.format.DateTimeFormat.forPattern("yyyyMMdd")
+  val dateFormat = org.joda.time.format.DateTimeFormat.forPattern("MM/dd/yyyy HH:m:s,SSS")
 
   // An example of a line of output where n=3:
   // 11/03/2008 11:24:27,100 GBPUSD - Bid: 10 @ 1.6831, 5 @ 1.6832, 30 @ 1.6835 / Ask: 27 @ 1.6837, 19 @ 1.6838, 4 @ 1.6841
@@ -121,7 +136,7 @@ object FXAggregator {
     val pairs = ladder.keys.map(_._2)
     pairs.map( (x:CurrencyPair) => { 
       val rates = ladder.filter( _._1._2 == x).map( _._2 ).toSeq
-      ts + " " + x + " - Bid: " + 
+      dateFormat.print(ts) + " " + x + " - Bid: " + 
       rates.map( _._1 ).sortBy( _.amt ).reverse.take(n).sortBy( _.amt ).map( _.output ).mkString(" ") + " / Ask: " + 
       rates.map( _._2 ).sortBy( _.amt ).take(n).map( _.output ).mkString(" ")      
     })
