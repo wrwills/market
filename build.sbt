@@ -18,4 +18,8 @@ libraryDependencies += "joda-time" % "joda-time" % "2.3"
 
 libraryDependencies += "org.joda" % "joda-convert" % "1.5"
 
+libraryDependencies += "com.github.scala-incubator.io" %% "scala-io-core" % "0.4.2"
+
+libraryDependencies += "com.github.scala-incubator.io" %% "scala-io-file" % "0.4.2"
+
 seq(SbtStartScript.startScriptForClassesSettings: _*)
