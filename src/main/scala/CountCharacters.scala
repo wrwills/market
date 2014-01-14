@@ -81,52 +81,11 @@ object CountCharacters {
   //countCharsInWords(999) = 21
   def countCharsInWords(i: Int): Int = toWords(i).filter(_ != ' ').length
 
-
-  def numericCharacterCount(x: Char): Int = 
-    if ( x == '0') 
-      0
-    else if (x == '1' | x == '2' | x == '6')
-      3
-    else if (x == '4' | x == '5' | x == '9')
-      4
-    else 
-      5
-
-  def numericCharacterCount(x: (Char, Char)): Int = { 
-    val baseCount: Int = numericCharacterCount( x._2 )
-    x match { 
-      case ('0', _) => baseCount
-      case ('1', c) => 
-        baseCount + (if (c == '4' | c == '6' | c =='7' | c == '9')  4 else 3)
-      case (b, c) => 
-        baseCount + 
-        numericCharacterCount(b) + 
-        (if (c == '2' | c == '3' | c == '4' | c == '5') 1 else 2)        
-    }
-  }
-
-  // extra characters from  hundred thousand million billion trillion
-  def lengthToExtraCount(l: Int): Int = { 
-    val extraCounts = 
-      List((2,7), (3,8), (6,7), (9,7), (12,8))
-    extraCounts.takeWhile( l > _._1 ).map( _._2).sum
-  }
-    
-  def numericCharacterCount(x: List[Char]): Int = x match {
-    case a :: Nil => numericCharacterCount(a)
-    case a :: b :: Nil => numericCharacterCount(a,b)
-    case _ => { 
-      val baseSum = x.sliding(3).map( s => numericCharacterCount(s.head) + numericCharacterCount( s.tail ) ).sum 
-      baseSum + lengthToExtraCount(x.size)
-    }
-  }
-
   def countCharsExtraCount(l: Int): Int = { 
     val extraCounts = 
       List((2,7), (3,8), (6,7), (9,7), (12,8)).map( x => (pow(10,x._1), x._2) )
     extraCounts.takeWhile( l > _._1 ).map( _._2).sum
   }
-
 
   def countCharsInDigit(i: Int): Int = { 
     require( i < 10 )
@@ -166,6 +125,11 @@ object CountCharacters {
   /*
     a more efficient implementation of countCharsInWords.
     This does not need to re-use the above and may be an entirely different algorithm.
+    
+  * This implementation proceeds by directly adding up the count of the letters for the
+  * words in the number.  This should be slightly quicker and is more direct
+  * It also allows us to do away with using String.valueOf -- a method which I suspect might
+  * take up the most amount of time in this computation
   */
   def countCharsInWordsOptimised(i: Int): Int = 
     countCharsInWordsO(i) + countCharsExtraCount(i)
