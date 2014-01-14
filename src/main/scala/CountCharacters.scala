@@ -1,5 +1,6 @@
 //Implement the missing methods.
 object CountCharacters {
+  import Math.pow
  
   def digitsToString(x: Char): String = digitCharToString(x)
 
@@ -120,8 +121,6 @@ object CountCharacters {
     }
   }
 
-  import Math.pow
-
   def countCharsExtraCount(l: Int): Int = { 
     val extraCounts = 
       List((2,7), (3,8), (6,7), (9,7), (12,8)).map( x => (pow(10,x._1), x._2) )
@@ -159,7 +158,7 @@ object CountCharacters {
 
   def countCharsInWordsO(i: Int): Int = 
     if (i < 1000)
-      countCharsInDigit( i / 100 ) +  countCharsLessThanHundred( i )     
+      countCharsInDigit( i / 100 ) +  countCharsLessThanHundred( i % 100 )     
     else
       countCharsInWordsO(i / 1000) + countCharsInWordsO(i % 1000)
   

@@ -40,6 +40,12 @@ trait MarketSimulationActorsContainer {
    * csv file contains floating point timestamps but scheduling uses milliseconds; my
    * understanding is that the jvm doesn't support fine-grained scheduling in nanoseconds
    * would you need a hard real time system for that?
+   *
+   * In order to have readings with the time stamp all get sent out at the same time I've
+   * implemented a lookahead so that all readings for the next timestamp are read into a pending
+   * list before it's time to send them.  It might have been simpler to have just read the
+   * entire csv file into memory as the given file isn't that large, but one would assume that
+   * this kind of application should be capable of handlin much larger files
    */
   class MarketSimulatorFeed extends Actor { 
     var startTime: Long = 0
@@ -47,7 +53,8 @@ trait MarketSimulationActorsContainer {
     var pending: List[SpotRates] = List()
     var next: Option[(Double,SpotRates)] = None
     
-    // might be better to use a stream here
+    // all readings for the next timestamp are read into a pending list before it's time to send them
+    // might be better to use a stream here    
     def fill(pTs: Double, accum: List[SpotRates]): (Double, List[SpotRates], Option[(Double, SpotRates)])  = 
       if (csvIterator.isEmpty)
         (pTs, accum, None)

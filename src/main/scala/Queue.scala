@@ -15,7 +15,7 @@ trait Queue[T] {
   def enqueue(t: T): Queue[T] = 
     Queue( t :: enqueueList, dequeueList )
 
-  //O(1) -- this isn't
+  //O(1) -- this isn't  
   def head: Option[T] = enqueueList.headOption
 
   //O(1) amortised
